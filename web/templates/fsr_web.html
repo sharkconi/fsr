@@ -1,0 +1,51 @@
+{% extends "fsr_base.html" %}
+{% block body %}
+<body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+        <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">丰收日大数据</a>
+        </div>
+    </nav>    
+    
+    <br />
+    <br />
+    <br />
+    <div class="container">
+        <div class="row">
+            <table class="table table-condensed table-hover">
+                <caption><strong>门店每日明细</strong></caption>
+                <thead>
+                    <tr class="info">
+                        <th>门店ID</th>
+                        <th>门店名称</th>
+                        <th>就餐人数</th>
+                        <th>收入总额</th>
+                        <th>折扣总额</th>
+                        <th>日期</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in ds %}
+                    <tr>
+                        <td>{{d[1]}} </td>
+                        <td>{{d[2]}} </td>
+                        <td>{{d[5]}} </td>
+                        <td>{{d[10]}} </td>
+                        <td>{{d[11]}} </td>
+                        <td>{{d[12]}} </td>
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+{% endblock %}

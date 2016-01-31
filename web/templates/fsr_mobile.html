@@ -1,0 +1,35 @@
+{% extends "fsr_base.html" %}
+{% block body %}
+<body>
+    <h4>丰收日大数据 - <strong>门店每日明细</strong></h4>
+    <br />
+    <div class="container-fluid">
+        <div class="row">
+            <table class="table table-condensed table-hover">
+                <thead>
+                    <tr class="info">
+                        <th>门店ID</th>
+                        <th>门店名称</th>
+                        <th>就餐人数</th>
+                        <th>收入总额</th>
+                        <th>折扣总额</th>
+                        <th>日期</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in ds %}
+                    <tr>
+                        <td>{{d[1]}} </td>
+                        <td>{{d[2]}} </td>
+                        <td>{{d[5]}} </td>
+                        <td>{{d[10]}} </td>
+                        <td>{{d[11]}} </td>
+                        <td>{{d[12]}} </td>
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+{% endblock %}
