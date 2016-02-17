@@ -1,29 +1,33 @@
 {% extends "fsr_base.html" %}
 {% block body %}
+<style>
+        table tbody, table thead
+        {
+            display: block;
+        }
+        table tbody
+        {
+            overflow: auto;
+            height:380px;
+        }
+
+</style>
 <body>
     <div class="container">
         <div class="row" style="text-align:center">
             <h4>丰收日数据库 - <strong>门店收入明细查询</strong></h4>
+            <label>数据日期: {{d}} </label> <br />
+            <label>收入净额: <span class="label label-danger label-lg">{{all_in}}</span> 万元</label>
         </div>
 
-        <div class="row" style="text-align:center">
-            <form class="form-inline">
-                <div class="form-group">
-                    <label>数据日期: {{d}}</label>
-                    <label>收入净额: <span class="label label-danger label-lg">{{all_in}}</span> 万元</label>
-                </div>
-            </form>
-        </div>
-
-            <table class="table table-bordered table-hover">
+            <table class="table table-bordered">
                 <thead>
                     <tr>
-                        <th>店面&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <th>店面&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                         </th>
-                        <th style = "text-align: right;"> 收入净额 </th>
-                        <th style = "text-align: right;"> 消费人数 </th>
-                        <th style = "text-align: right;"> 人均消费 </th>
+                        <th style = "text-align: right;">收入净额&nbsp;&nbsp; </th>
+                        <th style = "text-align: right;">消费人数</th>
+                        <th style = "text-align: right;">人均消费</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -37,14 +41,6 @@
                     {%endfor%}
                 </tbody>
             </table>
-
-        <nav>
-            <ul class="pager">
-                <li class="previous"><a href="#"><span aria-hidden="true">&larr;</span>&nbsp;Prev</a></li>
-                <li class="next"><a href="#">Next&nbsp;<span aria-hidden="true">&rarr;</span></a></li>
-            </ul>
-        </nav>
-
     </div>
 </body>
 {% endblock %}

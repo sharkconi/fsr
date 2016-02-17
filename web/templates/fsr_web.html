@@ -1,46 +1,66 @@
 {% extends "fsr_base.html" %}
 {% block body %}
+<style>
+    body {
+        background-color: #eeeeee;
+    }
+</style>
 <body>
-    <nav class="navbar navbar-default navbar-fixed-top">
+    <nav class="navbar navbar-default">
         <div class="container-fluid">
-        <!-- Brand and toggle get grouped for better mobile display -->
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
                 <span class="sr-only">Toggle navigation</span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="#">丰收日大数据</a>
+                </button>
+                <a class="navbar-brand" href="/web"><strong>丰收日数据库</strong></a>
+            </div>
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                 <ul class="nav navbar-nav">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            <strong>门店收入明细查询</strong><span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/web/{{d[1]}}">{{d[1]}}</a></li>
+                            <li><a href="/web/{{d[2]}}">{{d[2]}}</a></li>
+                            <li><a href="/web/{{d[3]}}">{{d[3]}}</a></li>
+                            <li><a href="/web/{{d[4]}}">{{d[4]}}</a></li>
+                            <li><a href="/web/{{d[5]}}">{{d[5]}}</a></li>
+                        </ul>
+                    </li>
+                 </ul>
+                <!--form class="navbar-form navbar-right">
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="{{d[0]}}" id="date_ctrl">
+                    </div>
+                    <button class="btn btn-default" id="date_btn">查询</button>
+                </form-->
+            </div>
         </div>
-    </nav>    
+    </nav>
     
-    <br />
-    <br />
-    <br />
     <div class="container">
         <div class="row">
-            <table class="table table-condensed table-hover">
-                <caption><strong>门店每日明细</strong></caption>
+            <table class="table table-bordered table-hover table-condensed">
+                <caption><label>数据日期: {{d[0]}} </label> <label>收入净额: <span class="label label-danger label-lg">{{all_in}}</span> 万元</label></caption>
                 <thead>
                     <tr class="info">
-                        <th>门店ID</th>
-                        <th>门店名称</th>
-                        <th>就餐人数</th>
-                        <th>收入总额</th>
-                        <th>折扣总额</th>
-                        <th>日期</th>
+                        <th style = "text-align: center;">店面</th>
+                        <th style = "text-align: right;">收入净额</th>
+                        <th style = "text-align: right;">消费人数</th>
+                        <th style = "text-align: right;">人均消费</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for d in ds %}
                     <tr>
-                        <td>{{d[1]}} </td>
-                        <td>{{d[2]}} </td>
-                        <td>{{d[5]}} </td>
-                        <td>{{d[10]}} </td>
-                        <td>{{d[11]}} </td>
-                        <td>{{d[12]}} </td>
+                        <td style = "text-align: center;"><strong>{{d[0]}}</strong></td>
+                        <td style = "text-align: right;">{{d[1]}}</td>
+                        <td style = "text-align: right;">{{d[2]}}</td>
+                        <td style = "text-align: right;">{{d[3]}}</td>
                     </tr>
                     {%endfor%}
                 </tbody>
