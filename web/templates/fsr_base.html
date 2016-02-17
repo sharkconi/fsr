@@ -2,13 +2,26 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>丰收日大数据</title>
+        <title>丰收日</title>
         <meta name="description" content="" />
         <meta name="author" content="" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         
         <link rel="stylesheet"" type="text/css" href="{{url_for('static', filename='css/bootstrap.min.css')}}" />
         <link rel="stylesheet"" type="text/css" href="{{url_for('static', filename='css/bootstrap-theme.min.css')}}" />
+
+        <style>
+        table tbody, table thead
+        {
+            display: block;
+        }
+        table tbody
+        {
+            overflow: auto;
+            height:380px;
+        }
+
+        </style>
     </head>
     {% block body %}{% endblock %}
 </html>
