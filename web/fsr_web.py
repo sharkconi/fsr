@@ -8,6 +8,14 @@ import datetime
 import time
 
 app = Flask(__name__)
+area_def=["S02","S06", "S07", "S14", "S23", "F02", "S30", "F09", "F03", u"一区小计",
+        "S03", "S20", "S27", "S28", "S33", "F07", "F04", u"二区小计",
+        "S04", "S08", "S15", "S18", "S31", "S36", "S37", "S39", u"三区小计",
+        "S09", "S17", "S21", "S24", "S25", "S32", "S35", "F10", u"四区小计",
+         "S10", "S12", "S19", "S22", "S26", "S40", "G01", u"五区小计",
+         "F01", "F06", "Y01", "Y02", "L01", u"六区小计",
+         "F08", "F05", u"北京区域小计",
+         "005", "006", u"点沁系列小计"]
 
 def handle_ribao_data(res):
     ds = []
@@ -15,10 +23,22 @@ def handle_ribao_data(res):
     for line in res:
         if Decimal(line[5]) == 0.0 or Decimal(line[6]) == 0.0:
             continue
-        d = (line[2], '{:10,.2f}'.format(Decimal(line[6])), '{:10,.2f}'.format(Decimal(line[5])), '{:10,.2f}'.format(Decimal(line[6])/Decimal(line[5])))
-        all_in = all_in + Decimal(line[6])
+        d = (line[1], line[2], Decimal(line[10])-Decimal(line[11]), Decimal(line[5]), (Decimal(line[10])-Decimal(line[11]))/Decimal(line[5]))
+        all_in = all_in + Decimal(line[10]) - Decimal(line[11])
         ds.append(d)
-    return (ds, all_in)
+
+    da = []
+    sum = [Decimal(0.0), Decimal(0.0), Decimal(0.0)]
+    for area in area_def:
+        if len(area) > 3:
+            da.append([area, '{:6,.2f}'.format(sum[0]), '{:5}'.format(sum[1]), '{:3,.2f}'.format(sum[0]/sum[1]), True])
+            sum = [Decimal(0.0), Decimal(0.0), Decimal(0.0)]
+        for d in ds:
+            if d[0] == area:
+                da.append([d[1], '{:6,.2f}'.format(d[2]), '{:5}'.format(d[3]), '{:3,.2f}'.format(d[4]), False])
+                sum[0] = sum[0] + d[2]
+                sum[1] = sum[1] + d[3]
+    return (da, all_in)
 
 @app.route('/m')
 def fsr_mobile_page():
