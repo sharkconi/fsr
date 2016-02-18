@@ -12,9 +12,9 @@ area_def=["S02","S06", "S07", "S14", "S23", "F02", "S30", "F09", "F03", u"一区
         "S03", "S20", "S27", "S28", "S33", "F07", "F04", u"二区小计",
         "S04", "S08", "S15", "S18", "S31", "S36", "S37", "S39", u"三区小计",
         "S09", "S17", "S21", "S24", "S25", "S32", "S35", "F10", u"四区小计",
-         "S10", "S12", "S19", "S22", "S26", "S40", "G01", u"五区小计",
+         "S10", "S12", "S19", "S22", "S26", "S38", "S40", "G01", u"五区小计",
          "F01", "F06", "Y01", "Y02", "L01", u"六区小计",
-         "F08", "F05", u"北京区域小计",
+         "F08", "F05", "L02", u"北京区域小计",
          "005", "006", u"点沁系列小计"]
 
 def handle_ribao_data(res):
@@ -22,6 +22,8 @@ def handle_ribao_data(res):
     all_in = Decimal(0.0)
     for line in res:
         if Decimal(line[5]) == 0.0 or Decimal(line[6]) == 0.0:
+            d = (line[1], line[2], Decimal(0.0), Decimal(0.0), Decimal(0.0))
+            ds.append(d)
             continue
         d = (line[1], line[2], Decimal(line[10])-Decimal(line[11]), Decimal(line[5]), (Decimal(line[10])-Decimal(line[11]))/Decimal(line[5]))
         all_in = all_in + Decimal(line[10]) - Decimal(line[11])

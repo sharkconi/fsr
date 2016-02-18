@@ -4,6 +4,9 @@
     body {
         background-color: #eeeeee;
     }
+    .yellow {
+        background-color: yellow;
+    }
 </style>
 <body>
     <nav class="navbar navbar-default">
@@ -51,7 +54,7 @@
                 <tbody>
                     {% for d in ds %}
                     {% if d[4] %}
-                        <tr class="danger">
+                        <tr class="yellow">
                     {%else%}
                         <tr>
                     {%endif%}
