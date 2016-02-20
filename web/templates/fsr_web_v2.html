@@ -1,0 +1,122 @@
+{% extends "fsr_base.html" %}
+{% block body %}
+
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="/v2/"><strong>丰收日数据库</strong></a>
+            </div>
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                 <ul class="nav navbar-nav">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+                            <strong>选择日期</strong><span class="caret"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/v2/web/{{d[1]}}_0">前一天({{d[1]}})</a></li>
+                            <li><a href="/v2/web/{{d[2]}}_0">后一天({{d[2]}})</a></li>
+                        </ul>
+                    </li>
+                 </ul>
+            </div>
+        </div>
+    </nav>
+    
+    
+    <div class="container">
+        {% if all_in == 0.0 %}
+        <div class="page-header">
+            <h1>{{d[0]}}数据还未导入，请稍后再试</h1>
+        </div>
+        {%else%}
+        <div id="container" style="width:100%; height:400px;"></div>
+        
+        <div class="row">
+            <table class="table table-bordered table-hover table-condensed">
+                <thead>
+                    <tr class="info">
+                        <th style = "text-align: left;">店面</th>
+                        <th style = "text-align: right;">收入净额</th>
+                        <th style = "text-align: right;">消费人数</th>
+                        <th style = "text-align: right;">人均消费</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                    {% for d in ds %}
+                    {% if d[4] == "" %}
+                        <td style = "text-align: left;"><strong>{{d[0]}}</strong></td>
+                    {%else%}
+                        <td style = "text-align: left;"><a href="{{d[4]}}"><strong>{{d[0]}}</strong></a></td>
+                    {%endif%}
+                        <td style = "text-align: right;">{{d[1]}}</td>
+                        <td style = "text-align: right;">{{d[2]}}</td>
+                        <td style = "text-align: right;">{{d[3]}}</td>
+                    </tr>
+                    {%endfor%}
+                </tbody>
+            </table>
+        </div>
+        {% if isBack %}
+        <div class="row">
+            <a class="btn btn-default btn-danger" href="/v2/web/{{d[0]}}_0">返回</a>
+        </div>
+        {%endif%}
+        {%endif%}
+    </div>
+    
+    
+</body>
+ <script src="{{url_for('static', filename='js/jquery-1.12.0.min.js')}}"></script>
+ <script src="http://code.highcharts.com/highcharts.js"></script>
+     
+<script>
+        $(function () { 
+    $('#container').highcharts({
+        chart: {
+            type: 'column',
+        },
+        title: {
+            text: '门店收入明细查询',
+        },
+        subtitle: {
+            text: '{{d[0]}}  {{name}}收入净额：<b>{{all_in}}</b> 万元'
+        },
+        xAxis: {
+            categories: {{chart_category | safe}},
+            title: {
+                text: null,
+            }
+        },
+        yAxis: {
+            title: {
+                text: null,
+            }
+        },
+        plotOptions: {
+            column: {
+                dataLabels: {
+                    enabled: true
+                }
+            }
+        },
+        tooltip: {
+            pointFormat: '收入: <b>{point.y:.2f} 万元</b>'
+        },
+        series: [{
+            name: '净收入(万元)',
+            data: {{serial_data | safe}} ,
+            }
+          ]
+    });
+});
+</script>
+
+{% endblock %}
