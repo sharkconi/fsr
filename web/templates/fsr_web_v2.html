@@ -11,7 +11,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="/v2/"><strong>丰收日数据库</strong></a>
+                <a class="navbar-brand" href="/v2/"><strong>丰收日营业日报</strong></a>
             </div>
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                  <ul class="nav navbar-nav">
@@ -21,7 +21,9 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a href="/v2/web/{{d[1]}}_0">前一天({{d[1]}})</a></li>
+                            {% if d[2] != ""%}
                             <li><a href="/v2/web/{{d[2]}}_0">后一天({{d[2]}})</a></li>
+                            {% endif %}
                         </ul>
                     </li>
                  </ul>

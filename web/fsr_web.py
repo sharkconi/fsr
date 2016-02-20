@@ -151,7 +151,7 @@ def fsr_get_category_data_v2(ds, area, date_str=None):
                         sum[0] = sum[0] + d[2]
                         sum[1] = sum[1] + d[3]
             all_in = all_in + sum[0]
-            da.append([area["name"], '{:6,.2f}'.format(sum[0]), '{:5}'.format(sum[1]), '{:3,.2f}'.format(sum[0]/sum[1]), "/v2/web/"+date_str+"_" + str(idx)])
+            da.append([area["name"], '{:6,.2f}'.format(sum[0]), '{:5,}'.format(sum[1]), '{:5,.2f}'.format(sum[0]/sum[1]), "/v2/web/"+date_str+"_" + str(idx)])
             chart_category.append(area["category"])
             serial_data.append(float('{:6,.2f}'.format(sum[0]/10000)))
             name = u"丰收日"
