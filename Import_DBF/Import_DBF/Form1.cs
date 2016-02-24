@@ -62,6 +62,7 @@ namespace Import_DBF
             sql_map.Add("get_recep_dis", "select OUTLET, SUM(amount) recep_dis from T_PAY where TRAN_TYPE =\'n\' and PAY_TYPE =\'0015\' and DATEA =\'{0}\' group by OUTLET");
             sql_map.Add("get_card_dis", "select OUTLET, SUM(amount) card_dis from T_PAY where TRAN_TYPE =\'n\' and PAY_TYPE =\'0013\' and DATEA=\'{0}\' group by OUTLET");
             sql_map.Add("get_ticket_dis", "select outlet, SUM(amount) ticket_dis from T_PAY where PAY_TYPE like \'LQ%\' and DATEA=\'{0}\'  group by OUTLET");
+            sql_map.Add("get_ticket_dis_2", "select REF_NUM, COUNT(ref_num), SUM(amount) from T_PAY where PAY_TYPE like \'LQ%\' and DATEA=\'{0}\' and OUTLET=\'{1}\' and sub_ref = \'00\' group by REF_NUM");
 
             sql_map.Add("get_member_card", "select PP, ITEM_CODE from case后菜肴分类 where xiaolei like '%[会员补办]卡%'");
             sql_map.Add("get_credit_gift", "select PP, ITEM_CODE from case后菜肴分类 where 菜肴名称 in(\'#苹果8G多媒体播(白)/个\',\'#苹果8G多媒体播(白)/个\',\'#田园茶具/套\',\'#炫彩胸针/枚\',\'#超酷打火机/个\',\'#精美挂口/枚\',\'#魅力手包/个\',\'#高仿真娃娃/只\',\'#精致手袋/只\',\'#消费卡/张\',\'#四件套/套\',\'#蚕丝被/套\',\'#珠宝盒/只\',\'#名牌香水/瓶\',\'#品牌电水壶/只\',\'#名牌MP3/部\',\'#名牌手机/部\',\'#五帝珍宝蛙/只\',\'#水晶胸针(大)/枚\',\'#水晶胸针(小)/枚\',\'#U盘挂件/个\',\'#欧姆龙血压计/个\',\'#双立人四件套/套\',\'#世博纪念币/套\',\'#儿童书包/个\',\'#儿童阳伞/把\',\'#滑板车/个\',\'#儿童拉杆书包/个\',\'#卡通拼图/套\',\'#乐高积木/套\',\'#电动玩具/个\',\'#折叠自行车/辆\',\'#定制礼品/个\',\'#名牌MP3/只\',\'#苹果8G多媒体播(黑)/部\',\'#苹果8G多媒体播(白)/部\',\'#田园茶具/例\',\'#炫彩胸针/例\',\'#超酷打火机/例\',\'#精美挂口/只\',\'#魅力手包/只\',\'#苹果8G多媒体播(黑)/个\',\'#消费卡500/张\',\'#蚕丝被/条\',\'#名牌手机/只\',\'#水晶胸针(大)/个\',\'#水晶胸针(小)/个\',\'#双利人道具/套\')");
@@ -495,7 +496,17 @@ namespace Import_DBF
 
             DataTable ticket_dis_dt = get_datatable(String.Format(sql_map["get_ticket_dis"], dateText.Text));
             for (int i = 0; i < ticket_dis_dt.Rows.Count; i++)
+            {
                 ribao_map[ticket_dis_dt.Rows[i][0].ToString()].ticket_dis = Convert.ToDouble(ticket_dis_dt.Rows[i][1]);
+                DataTable ticket_dis_dt_2 = get_datatable(String.Format(sql_map["get_ticket_dis_2"], dateText.Text, ticket_dis_dt.Rows[i][0].ToString()));
+                for (int j = 0; j < ticket_dis_dt_2.Rows.Count; j++)
+                {
+                    if (Convert.ToInt16(ticket_dis_dt_2.Rows[j][1]) > 1)
+                    {
+                        ribao_map[ticket_dis_dt.Rows[i][0].ToString()].ticket_dis -= Convert.ToDouble(ticket_dis_dt_2.Rows[j][2]);
+                    }
+                }
+            }
 
 
             DataTable member_card_sale_dt = get_datatable(String.Format(sql_map["get_order_non_free"], dateText.Text));
@@ -605,6 +616,7 @@ namespace Import_DBF
         {
             logList.Items.Clear();
             Delete_daily_table(dateText.Text);
+            delete_ribao_table();
         }
         private void dailydeleteBtn_Click(object sender, EventArgs e)
         {
