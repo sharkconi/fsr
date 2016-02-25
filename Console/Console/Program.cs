@@ -12,11 +12,9 @@ namespace ConsoleApp
 {
     class ConsoleApp
     {
-        public void test()
-        {
-            Console.WriteLine("ConsoleApp:test");
-        }
-
+        //string mysql_conn_str = "server=192.168.31.195;User Id=root;password=initial;Database=fsr;CharSet=utf8;";
+        //string sqlserver_conn_str = "user id=sa;password=wang419420; initial catalog=banzhaoyun; Server=192.168.3.101\\foodsd;Connect Timeout=30";
+        //excel sql_str like: insert into [Sheet1$B1:B1] values('xxx')
         public void mysql_execute_non_query(string conn_str, string sql_str)
         {
             MySqlConnection conn = new MySqlConnection(conn_str);
@@ -26,6 +24,7 @@ namespace ConsoleApp
             conn.Open();
             cmd.ExecuteNonQuery();
             conn.Close();
+            conn.Dispose();
 
             return;
         }
@@ -45,6 +44,7 @@ namespace ConsoleApp
             dt.Load(dr);
             dr.Close();
             conn.Close();
+            conn.Dispose();
 
             return ds.Tables[0];
         }
@@ -58,6 +58,7 @@ namespace ConsoleApp
             sql_cmd.Connection.Open();
             sql_cmd.ExecuteNonQuery();
             sql_cmd.Connection.Close();
+            sql_cmd.Connection.Dispose();
         }
 
         public DataTable sqlserver_execute_get_dt(string conn_str, string sql_str)
@@ -71,31 +72,51 @@ namespace ConsoleApp
             SqlDataAdapter da = new System.Data.SqlClient.SqlDataAdapter(sql_cmd);
             da.Fill(dt);
 
+            sql_cmd.Connection.Close();
+            sql_cmd.Connection.Dispose();
+
             return dt;
         }
 
         public DataTable excel_get_dt(string file_path, string sheet_name)
         {
             string connStr = "Provider = Microsoft.ACE.OLEDB.12.0; " + "Data Source = " + file_path + "; " + "; Extended Properties =\"Excel 12.0;HDR=YES;IMEX=1\"";
-            OleDbConnection conn = new OleDbConnection(connStr);
-
-            conn.Open();
             DataSet ds = new DataSet();
-            string sql = "Select * FROM [" + sheet_name + "$]";
-            OleDbDataAdapter odda = new OleDbDataAdapter(sql, conn);
-            odda.Fill(ds, sheet_name);
-            conn.Close();
+
+            using (OleDbConnection conn = new OleDbConnection(connStr))
+            {
+                conn.Open();
+                string sql = "Select * FROM [" + sheet_name + "$]";
+                OleDbDataAdapter odda = new OleDbDataAdapter(sql, conn);
+                odda.Fill(ds, sheet_name);
+                conn.Close();
+                conn.Dispose();
+            }
             return ds.Tables[0];
+        }
+
+        public void excel_execute_non_query(string file_path, string sheet_name, string sql_str)
+        {
+            string connStr = "Provider = Microsoft.ACE.OLEDB.12.0; " + "Data Source = " + file_path + "; " + "; Extended Properties =\"Excel 12.0;HDR=YES;READONLY=FALSE\"";
+            DataSet ds = new DataSet();
+
+            using (OleDbConnection conn = new OleDbConnection(connStr))
+            {
+                    conn.Open();
+                    OleDbCommand cmd = new OleDbCommand(sql_str, conn);
+                    cmd.ExecuteNonQuery();
+                    conn.Close();
+                    conn.Dispose();
+            }
+            return;
         }
     }
     class Program
     {
-        //string mysql_conn_str = "server=192.168.31.195;User Id=root;password=initial;Database=fsr;CharSet=utf8;";
-        //string sqlserver_conn_str = "user id=sa;password=wang419420; initial catalog=banzhaoyun; Server=192.168.3.101\\foodsd;Connect Timeout=30";
+        
         static void Main(string[] args)
         {
             ConsoleApp console = new ConsoleApp();
-            console.test();
         }
     }
 }
