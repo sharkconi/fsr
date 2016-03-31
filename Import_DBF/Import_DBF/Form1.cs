@@ -188,11 +188,24 @@ namespace Import_DBF
             sql_cmd.Connection = sql_conn;
             sql_cmd.ExecuteNonQuery();
             logList.Items.Insert(0, "删除 T_ATT 成功");
+
             sql = "delete from dbo.T_order where year(DATEA)=" + year + " and MONTH (DATEA)=" + month + " and DAY(DATEA)=" + day;
             sql_cmd = new SqlCommand(sql);
             sql_cmd.Connection = sql_conn;
             sql_cmd.ExecuteNonQuery();
             logList.Items.Insert(0, "删除 T_ORDER 成功");
+
+            sql = "delete from dbo.A_PAY where year(DATE)=" + year + " and MONTH (DATE)=" + month + " and DAY(DATE)=" + day;
+            sql_cmd = new SqlCommand(sql);
+            sql_cmd.Connection = sql_conn;
+            sql_cmd.ExecuteNonQuery();
+            logList.Items.Insert(0, "删除 A_PAY 成功");
+
+            sql = "delete from dbo.A_TRAN where year(IN_DATE)=" + year + " and MONTH (IN_DATE)=" + month + " and DAY(IN_DATE)=" + day;
+            sql_cmd = new SqlCommand(sql);
+            sql_cmd.Connection = sql_conn;
+            sql_cmd.ExecuteNonQuery();
+            logList.Items.Insert(0, "删除 A_TRAN 成功");
 
             sql_conn.Close();
 
@@ -291,17 +304,38 @@ namespace Import_DBF
                         // if ((String)dbf_dt.Rows[j][2] == "07771")
                         //     continue;
                         //System.Console.WriteLine(" line: " + dbf_dt.Rows[j][2]);
-                        DataRow newrow = dt.NewRow();
-                        newrow[0] = code;
-                        for (k = 0; k < dbf_dt.Columns.Count; k++)
+                        if (table.Contains("A_PAY"))
                         {
-                            newrow[k + 1] = dbf_dt.Rows[j][k];
+                            DataRow newrow = dt.NewRow();
+                            for (k = 0; k < dbf_dt.Columns.Count; k++)
+                            {
+                                newrow[k] = dbf_dt.Rows[j][k];
+                            }
+                            newrow[k] = date;
+                            dt.Rows.Add(newrow);
                         }
+                        else if (table.Contains("A_TRAN"))
+                        {
+                            DataRow newrow = dt.NewRow();
+                            for (k = 0; k < dbf_dt.Columns.Count; k++)
+                            {
+                                newrow[k] = dbf_dt.Rows[j][k];
+                            }
+                            dt.Rows.Add(newrow);
+                        }
+                        else
+                        {
+                            DataRow newrow = dt.NewRow();
+                            newrow[0] = code;
+                            for (k = 0; k < dbf_dt.Columns.Count; k++)
+                            {
+                                newrow[k + 1] = dbf_dt.Rows[j][k];
+                            }
 
-                        if (table.Contains("T_ATT") || table.Contains("T_PAY"))
-                            newrow[k + 1] = date;
-
-                        dt.Rows.Add(newrow);
+                            if (table.Contains("T_ATT") || table.Contains("T_PAY"))
+                                newrow[k + 1] = date;
+                            dt.Rows.Add(newrow);
+                        }
                     }
                     
                     sql_cmd.Connection.Open();
@@ -432,6 +466,8 @@ namespace Import_DBF
                 start_daily_import("T_ATT", shop_map[key]);
                 //start_daily_import("DISCTRAN", shop_map[key]);
                 start_daily_import("T_ORDER", shop_map[key]);
+                start_daily_import("A_PAY", shop_map[key]);
+                start_daily_import("A_TRAN", shop_map[key]);
             }
             import_daily_ribao();
             MessageBox.Show("所有门店导入完成");
@@ -616,7 +652,7 @@ namespace Import_DBF
         {
             logList.Items.Clear();
             Delete_daily_table(dateText.Text);
-            delete_ribao_table();
+            //delete_ribao_table();
         }
         private void dailydeleteBtn_Click(object sender, EventArgs e)
         {
