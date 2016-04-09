@@ -14,7 +14,6 @@ using MySql.Data.MySqlClient;
 
 namespace Import_DBF
 {
-    
 
     public partial class Form1 : Form
     {
@@ -43,6 +42,7 @@ namespace Import_DBF
             //shop_map.Add("fsrold", "112");    /*fsrold is closed*/
 
             dateText.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            dateFrom.Text = "2016-03-01";
             System.Windows.Forms.Control.CheckForIllegalCrossThreadCalls = false;
 
             base_map.Add("database\\category.dbf", "category");
@@ -356,6 +356,106 @@ namespace Import_DBF
             }
         }
 
+        private void start_daily_import2(String table_name, String code)
+        {
+            SqlConnection sql_conn;
+            SqlCommand sql_cmd;
+            SqlDataAdapter da;
+            DataTable dt = new DataTable();
+
+            /*Connect to Sql server*/
+            string strConnection = "user id=sa;password=wang419420;";
+            strConnection += "initial catalog=fsrBigData;Server=192.168.3.252;";
+            strConnection += "Connect Timeout=30";
+            sql_conn = new SqlConnection(strConnection);
+            sql_cmd = new SqlCommand("select * from dbo." + table_name);
+            sql_cmd.Connection = sql_conn;
+            da = new System.Data.SqlClient.SqlDataAdapter(sql_cmd);
+            //da.Fill(dt);
+            da.FillSchema(dt, System.Data.SchemaType.Mapped);
+
+            /*Read DBF file content*/
+            foreach (String path in folders)
+            {
+                System.Data.Odbc.OdbcConnection conn = new System.Data.Odbc.OdbcConnection();
+                try
+                {
+                    String p = path.Replace(" ", "");
+                    String table = p + "\\" + table_name + ".DBF";
+                    string connStr = @"Driver={Microsoft Visual FoxPro Driver};SourceType=DBF;SourceDB=" + table + ";Exclusive=No;NULL=NO;Collate=Machine;BACKGROUNDFETCH=NO;DELETED=NO";
+                    conn.ConnectionString = connStr;
+
+                    if (!File.Exists(table))
+                    {
+                        MessageBox.Show(table + " is not exist");
+                        continue;
+                    }
+                    conn.Open();
+                    String sql = @"select * from " + table;
+
+                    System.Data.Odbc.OdbcDataAdapter dbf_da = new System.Data.Odbc.OdbcDataAdapter(sql, conn);
+                    DataTable dbf_dt = new DataTable();
+                    dbf_dt.Clear();
+                    dbf_da.Fill(dbf_dt);
+                    conn.Close();
+
+                    int year = path.IndexOf('2');
+                    DateTime date = Convert.ToDateTime(path.Substring(year, 10).Replace('\\', '-'));
+                    int k = 0;
+
+                    for (int j = 0; j < dbf_dt.Rows.Count; j++)
+                    {
+                        if (table.Contains("A_PAY"))
+                        {
+                            DataRow newrow = dt.NewRow();
+                            for (k = 0; k < dbf_dt.Columns.Count; k++)
+                            {
+                                newrow[k] = dbf_dt.Rows[j][k];
+                            }
+                            newrow[k] = date;
+                            dt.Rows.Add(newrow);
+                        }
+                        else if (table.Contains("A_TRAN"))
+                        {
+                            DataRow newrow = dt.NewRow();
+                            for (k = 0; k < dbf_dt.Columns.Count; k++)
+                            {
+                                newrow[k] = dbf_dt.Rows[j][k];
+                            }
+                            dt.Rows.Add(newrow);
+                        }
+                        else
+                        {
+                            DataRow newrow = dt.NewRow();
+                            newrow[0] = code;
+                            for (k = 0; k < dbf_dt.Columns.Count; k++)
+                            {
+                                newrow[k + 1] = dbf_dt.Rows[j][k];
+                            }
+
+                            if (table.Contains("T_ATT") || table.Contains("T_PAY"))
+                                newrow[k + 1] = date;
+                            dt.Rows.Add(newrow);
+                        }
+                    }
+
+                    sql_cmd.Connection.Open();
+                    SqlCommandBuilder cb = new SqlCommandBuilder(da);
+                    da.Update(dt);
+                    sql_cmd.Connection.Close();
+                    dt.Clear();
+                    logList.Items.Insert(0, table);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                    logList.Items.Insert(0, ex.ToString());
+                    conn.Close();
+                    sql_cmd.Connection.Close();
+                    dt.Clear();
+                }
+            }
+        }
         private void start_base_import(String table, String table_name, String code)
         {
             SqlConnection sql_conn;
@@ -464,10 +564,15 @@ namespace Import_DBF
                 start_daily_import("T_TRAN", shop_map[key]);
                 start_daily_import("T_LOG", shop_map[key]);
                 start_daily_import("T_ATT", shop_map[key]);
-                //start_daily_import("DISCTRAN", shop_map[key]);
                 start_daily_import("T_ORDER", shop_map[key]);
+
+                /*start_daily_import2("T_PAY", shop_map[key]);
+                start_daily_import2("T_TRAN", shop_map[key]);
+                start_daily_import2("T_LOG", shop_map[key]);
+                start_daily_import2("T_ATT", shop_map[key]);
+                start_daily_import2("T_ORDER", shop_map[key]);
                 start_daily_import("A_PAY", shop_map[key]);
-                start_daily_import("A_TRAN", shop_map[key]);
+                start_daily_import("A_TRAN", shop_map[key]);*/
             }
             import_daily_ribao();
             MessageBox.Show("所有门店导入完成");
@@ -1248,6 +1353,108 @@ namespace Import_DBF
             Thread t = new Thread(check_dbf_date);
             t.Start();
         }
+
+        private void btnBaobiao_Click(object sender, EventArgs e)
+        {
+            int i = 0, j = 0;
+            Decimal d, zkou=new Decimal(0);
+
+            if (dateEnd.Text.Trim() == "")
+                dateEnd.Text = dateFrom.Text;
+
+            logList.Items.Clear();
+            logList.Items.Add("门店" + departCode.Text + " (" +dateFrom.Text + "-" +dateEnd.Text+ ") 报表数据");
+            logList.Items.Add("---------------------------------------");
+            logList.Items.Add("");
+
+            sqlhelper sh = new sqlhelper();
+            sh.sqlserver_set_connstr("user id=sa;password=wang419420; initial catalog=banzhaoyun; Server=192.168.3.101\\foodsd;Connect Timeout=30");
+
+            Baobiaohelper bbh = new Baobiaohelper();
+
+            string sql_cmd = string.Format(bbh.get_sql_command("mfei"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            DataTable dt = sh.sqlserver_execute_get_dt(sql_cmd);
+            d = Convert.ToDecimal(dt.Rows[0][1].ToString());
+
+            sql_cmd = string.Format(bbh.get_sql_command("lrun"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            dt = sh.sqlserver_execute_get_dt(sql_cmd);
+            logList.Items.Add("食品原价：" + (Convert.ToDecimal(dt.Rows[0][3].ToString()) + d).ToString());
+            logList.Items.Add("大单利润：" + dt.Rows[0][1].ToString());
+            logList.Items.Add("销售总额：" + (Convert.ToDecimal(dt.Rows[0][2].ToString()) + d).ToString());
+
+            sql_cmd = string.Format(bbh.get_sql_command("jdui"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            dt = sh.sqlserver_execute_get_dt(sql_cmd);
+            logList.Items.Add("积兑礼额：" + dt.Rows[0][1].ToString());
+
+            sql_cmd = string.Format(bbh.get_sql_command("zkou"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            dt = sh.sqlserver_execute_get_dt(sql_cmd);
+            for (i = 0; i < dt.Rows.Count; i++)
+                zkou += Convert.ToDecimal(dt.Rows[i][2].ToString());
+
+            logList.Items.Add("折扣总额：" + (zkou-d).ToString());
+
+                        logList.Items.Add("");
+            logList.Items.Add("================================");
+
+            d = 0;
+            logList.Items.Add("食品收款方式");
+            sql_cmd = string.Format(bbh.get_sql_command("food_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            dt = sh.sqlserver_execute_get_dt(sql_cmd);
+            for (i = 0; i < dt.Rows.Count; i++)
+            {
+                logList.Items.Add(dt.Rows[i][1].ToString() + ":\t" + dt.Rows[i][2].ToString());
+                d += Convert.ToDecimal(dt.Rows[i][2].ToString());
+            }
+            logList.Items.Add("总额：\t" + d.ToString());
+
+            logList.Items.Add("================================");
+            d = 0;
+            logList.Items.Add("充值及储值收款方式");
+            sql_cmd = string.Format(bbh.get_sql_command("czhi_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            dt = sh.sqlserver_execute_get_dt(sql_cmd);
+            for (i = 0; i < dt.Rows.Count; i++)
+            {
+                logList.Items.Add(dt.Rows[i][1].ToString() + ":\t" + dt.Rows[i][2].ToString());
+                d += Convert.ToDecimal(dt.Rows[i][2].ToString());
+            }
+            logList.Items.Add("总额：\t" + d.ToString());
+
+            logList.Items.Add("================================");
+            d = 0;
+            logList.Items.Add("挂账回收收款方式");
+            sql_cmd = string.Format(bbh.get_sql_command("gzhang_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            dt = sh.sqlserver_execute_get_dt(sql_cmd);
+            for (i = 0; i < dt.Rows.Count; i++)
+            {
+                logList.Items.Add(dt.Rows[i][1].ToString() + ":\t" + dt.Rows[i][2].ToString());
+                d += Convert.ToDecimal(dt.Rows[i][2].ToString());
+            }
+            logList.Items.Add("总额：\t" + d.ToString());
+
+            logList.Items.Add("================================");
+            d = 0;
+            logList.Items.Add("签单预付收款方式");
+            sql_cmd = string.Format(bbh.get_sql_command("qdan_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            dt = sh.sqlserver_execute_get_dt(sql_cmd);
+            for (i = 0; i < dt.Rows.Count; i++)
+            {
+                logList.Items.Add(dt.Rows[i][1].ToString() + ":\t" + dt.Rows[i][2].ToString());
+                d += Convert.ToDecimal(dt.Rows[i][2].ToString());
+            }
+            logList.Items.Add("总额：\t" + d.ToString());
+
+            logList.Items.Add("================================");
+            d = 0;
+            logList.Items.Add("定金收取/取消收款方式");
+            sql_cmd = string.Format(bbh.get_sql_command("djin_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            dt = sh.sqlserver_execute_get_dt(sql_cmd);
+            for (i = 0; i < dt.Rows.Count; i++)
+            {
+                logList.Items.Add(dt.Rows[i][1].ToString() + ":\t" + dt.Rows[i][2].ToString());
+                d += Convert.ToDecimal(dt.Rows[i][2].ToString());
+            }
+            logList.Items.Add("总额：\t" + d.ToString());
+        }
     }
 
     public class ribao_t
@@ -1301,4 +1508,64 @@ namespace Import_DBF
         public double credit_gift_sale = 0;
         public double credit_gift_free = 0;
     };
+
+    class sqlhelper
+    {
+        public void sqlserver_execute_non_query(string sql_str)
+        {
+            //string sqlserver_conn_str = "user id=sa;password=wang419420; initial catalog=banzhaoyun; Server=192.168.3.101\\foodsd;Connect Timeout=30";
+
+            SqlConnection sql_conn = new SqlConnection(this.conn_str);
+            SqlCommand sql_cmd = new SqlCommand(sql_str);
+            sql_cmd.Connection = sql_conn;
+
+            sql_cmd.Connection.Open();
+            sql_cmd.ExecuteNonQuery();
+            sql_cmd.Connection.Close();
+            sql_cmd.Connection.Dispose();
+        }
+
+        public DataTable sqlserver_execute_get_dt(string sql_str)
+        {
+            //string sqlserver_conn_str = "user id=sa;password=wang419420; initial catalog=banzhaoyun; Server=192.168.3.101\\foodsd;Connect Timeout=30";
+            SqlConnection sql_conn = new SqlConnection(this.conn_str);
+            SqlCommand sql_cmd = new SqlCommand(sql_str);
+            sql_cmd.CommandTimeout = 300;
+            DataTable dt = new DataTable();
+            sql_cmd.Connection = sql_conn;
+
+            sql_cmd.Connection.Open();
+            SqlDataAdapter da = new System.Data.SqlClient.SqlDataAdapter(sql_cmd);
+            da.Fill(dt);
+
+            da.Dispose();
+            sql_cmd.Connection.Close();
+            sql_cmd.Connection.Dispose();
+
+            return dt;
+        }
+        public void sqlserver_set_connstr(string str) { conn_str = str; }
+
+        private string conn_str;
+    }
+
+    class Baobiaohelper
+    {
+
+        public Baobiaohelper()
+        {
+            this.sqlcmd_map.Add("food_income", "SELECT b.OUTLET,C.DESC1 as 付款名称, SUM(B.AMOUNT) as 付款金额 FROM T_TRAN A INNER JOIN T_PAY B ON A.PP=B.PP AND A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE AND B.PP=C.PP WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\' AND B.DATEA BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.PP=\'101\' AND B.PP=\'101\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
+            this.sqlcmd_map.Add("gzhang_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\' 	AND B.DATE BETWEEN \'{0}' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.REF_NUM LIKE \'%H%\' 	AND B.REF_NUM LIKE \'%H%\' And c.PP=\'101\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
+            this.sqlcmd_map.Add("czhi_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\' AND B.DATE BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.REF_NUM LIKE \'%N%\' AND B.REF_NUM LIKE \'%N%\' and c.PP=\'101\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
+            this.sqlcmd_map.Add("djin_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\'	AND B.DATE BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.REF_NUM LIKE \'%D%\'	AND B.REF_NUM LIKE \'%D%\' and c.PP=\'101\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
+            this.sqlcmd_map.Add("qdan_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\'	AND B.DATE BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'S02\' AND A.REF_NUM LIKE \'%G%\' AND B.REF_NUM LIKE \'%G%\' and c.PP=\'101\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
+            this.sqlcmd_map.Add("jdui", "SELECT outlet,SUM(ITEM_DISC) FROM T_ORDER WHERE DATEA BETWEEN \'{0}\' AND \'{1}\' AND PP=\'101\' and OUTLET=\'{2}\' AND TYPEA=\'N\' group by outlet");
+            this.sqlcmd_map.Add("zkou", "SELECT OUTLET,b.DESC1,-SUM(AMT2) FROM T_LOG a inner join disc_hdHC b on a.pp=b.PP and a.REMARK3=b.CODE WHERE TYPEA=\'N\' and a.PP=\'101\' AND b.PP=\'101\' AND OUTLET=\'{2}\' AND DATE BETWEEN \'{0}\' AND \'{1}\' AND LOG_TYPE IN ('DORP','DORA','DCTP') GROUP BY b.DESC1,OUTLET");
+            this.sqlcmd_map.Add("mfei", "SELECT OUTLET,-SUM(AMT) FROM T_ORDER WHERE DATEA BETWEEN \'{0}\' AND \'{1}\' AND TYPEA=\'N\' and PP=\'101\'	and outlet=\'{2}\' AND REASON IN ('51','52') GROUP BY OUTLET");
+            this.sqlcmd_map.Add("lrun", "SELECT OUTLET,SUM(AMT-QTY*COST) as 大单利润, SUM(AMT) as 销售总额, SUM(QTY*COST) as 食品原价 FROM T_ORDER WHERE SETMEAL<=\'0\' AND DATEA BETWEEN \'{0}\' AND \'{1}\'	AND OUTLET=\'{2}\' AND TYPEA=\'N\' GROUP BY OUTLET");
+        }
+        public String get_sql_command(string key) { return sqlcmd_map[key]; }
+
+        private Dictionary<String, String> sqlcmd_map = new Dictionary<String, String>();
+    }
 }
