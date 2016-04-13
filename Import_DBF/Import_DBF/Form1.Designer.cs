@@ -33,12 +33,13 @@
             this.button1 = new System.Windows.Forms.Button();
             this.propdelbtn = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.button2 = new System.Windows.Forms.Button();
+            this.departCombo = new System.Windows.Forms.ComboBox();
             this.btnBaobiao = new System.Windows.Forms.Button();
             this.dateEnd = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.dateFrom = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.departCode = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.propBtn = new System.Windows.Forms.Button();
             this.logList = new System.Windows.Forms.ListBox();
@@ -98,12 +99,13 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.button2);
+            this.groupBox1.Controls.Add(this.departCombo);
             this.groupBox1.Controls.Add(this.btnBaobiao);
             this.groupBox1.Controls.Add(this.dateEnd);
             this.groupBox1.Controls.Add(this.label3);
             this.groupBox1.Controls.Add(this.dateFrom);
             this.groupBox1.Controls.Add(this.label2);
-            this.groupBox1.Controls.Add(this.departCode);
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Location = new System.Drawing.Point(381, 20);
             this.groupBox1.Name = "groupBox1";
@@ -112,9 +114,27 @@
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "报表数据查询";
             // 
+            // button2
+            // 
+            this.button2.Location = new System.Drawing.Point(302, 51);
+            this.button2.Name = "button2";
+            this.button2.Size = new System.Drawing.Size(62, 19);
+            this.button2.TabIndex = 8;
+            this.button2.Text = "导出数据";
+            this.button2.UseVisualStyleBackColor = true;
+            this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
+            // departCombo
+            // 
+            this.departCombo.FormattingEnabled = true;
+            this.departCombo.Location = new System.Drawing.Point(87, 20);
+            this.departCombo.Name = "departCombo";
+            this.departCombo.Size = new System.Drawing.Size(121, 20);
+            this.departCombo.TabIndex = 7;
+            // 
             // btnBaobiao
             // 
-            this.btnBaobiao.Location = new System.Drawing.Point(300, 55);
+            this.btnBaobiao.Location = new System.Drawing.Point(302, 20);
             this.btnBaobiao.Name = "btnBaobiao";
             this.btnBaobiao.Size = new System.Drawing.Size(62, 22);
             this.btnBaobiao.TabIndex = 6;
@@ -153,13 +173,6 @@
             this.label2.Size = new System.Drawing.Size(59, 12);
             this.label2.TabIndex = 2;
             this.label2.Text = "查询日期:";
-            // 
-            // departCode
-            // 
-            this.departCode.Location = new System.Drawing.Point(88, 21);
-            this.departCode.Name = "departCode";
-            this.departCode.Size = new System.Drawing.Size(189, 21);
-            this.departCode.TabIndex = 1;
             // 
             // label1
             // 
@@ -259,10 +272,11 @@
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox dateFrom;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.TextBox departCode;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox dateEnd;
         private System.Windows.Forms.Button btnBaobiao;
+        private System.Windows.Forms.ComboBox departCombo;
+        private System.Windows.Forms.Button button2;
     }
 }
 

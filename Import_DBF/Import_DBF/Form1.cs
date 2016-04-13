@@ -18,12 +18,13 @@ namespace Import_DBF
     public partial class Form1 : Form
     {
         private List<String> folders = new List<String>();
-        private String base_path = "F:\\cust\\pos710\\";
+        private String base_path = "Y:\\cust\\pos710\\";
         Dictionary<String,String> shop_map = new Dictionary<String,String>();
         Dictionary<String, String> base_map = new Dictionary<String, String>();
         private String dbname = "banzhaoyun";
         Dictionary<String, String> sql_map = new Dictionary<String, String>();
         Dictionary<String, ribao_t> ribao_map = new Dictionary<String,ribao_t>();
+        Dictionary<String, String> depart_pp_map = new Dictionary<String, String>();
 
         public Form1()
         {
@@ -42,7 +43,35 @@ namespace Import_DBF
             //shop_map.Add("fsrold", "112");    /*fsrold is closed*/
 
             dateText.Text = DateTime.Now.ToString("yyyy-MM-dd");
-            dateFrom.Text = "2016-03-01";
+            dateFrom.Text = DateTime.Now.ToString("yyyy-MM-dd");
+            string[] depart_list = new string[]{"S02", "S06", "S07", "S14", "S23", "F02", "S30", "F09", "F03", "S03", "S20", "S27", "S28", "S33", "F07", "F04",
+                            "S04", "S08", "S15", "S18", "S31", "S36", "S37", "S39", "S09", "S17", "S21", "S24", "S25", "S32", "S35", "F10", "S10", "S12", "S19", "S22", "S26", "S38", "S40", "G01",
+                            "F01", "F06", "Y01", "Y02", "L01", "F08", "F05", "L02", "005", "006"};
+            departCombo.Items.AddRange(depart_list);
+            foreach(String name in depart_list)
+            {
+                if (name == "G01")
+                    depart_pp_map[name] = "113";
+                else if (name == "F05" || name == "L02")
+                    depart_pp_map[name] = "110";
+                else if (name == "F08")
+                    depart_pp_map[name] = "109";
+                else if (name == "F07")
+                    depart_pp_map[name] = "108";
+                else if (name == "F03" || name == "F09")
+                    depart_pp_map[name] = "107";
+                else if (name == "005" || name == "006")
+                    depart_pp_map[name] = "105";
+                else if (name == "L01")
+                    depart_pp_map[name] = "104";
+                else if (name == "Y01" || name == "Y02")
+                    depart_pp_map[name] = "103";
+                else if (name == "F01" || name == "F04" || name == "F06")
+                    depart_pp_map[name] = "102";
+                else
+                    depart_pp_map[name] = "101";
+            }
+
             System.Windows.Forms.Control.CheckForIllegalCrossThreadCalls = false;
 
             base_map.Add("database\\category.dbf", "category");
@@ -287,7 +316,11 @@ namespace Import_DBF
                         continue;
                     }
                     conn.Open();
-                    String sql = @"select * from " + table;
+                    String sql;
+                    if (table.Contains("A_TRAN"))
+                        sql = @"select ref_num, outlet, tran_type, in_date from " + table;
+                    else
+                        sql = @"select * from " + table;
 
                     System.Data.Odbc.OdbcDataAdapter dbf_da = new System.Data.Odbc.OdbcDataAdapter(sql, conn);
                     DataTable dbf_dt = new DataTable();
@@ -301,9 +334,6 @@ namespace Import_DBF
                     //System.Console.WriteLine(table);
                     for (int j = 0; j < dbf_dt.Rows.Count; j++)
                     {
-                        // if ((String)dbf_dt.Rows[j][2] == "07771")
-                        //     continue;
-                        //System.Console.WriteLine(" line: " + dbf_dt.Rows[j][2]);
                         if (table.Contains("A_PAY"))
                         {
                             DataRow newrow = dt.NewRow();
@@ -317,10 +347,11 @@ namespace Import_DBF
                         else if (table.Contains("A_TRAN"))
                         {
                             DataRow newrow = dt.NewRow();
-                            for (k = 0; k < dbf_dt.Columns.Count; k++)
-                            {
-                                newrow[k] = dbf_dt.Rows[j][k];
-                            }
+                            newrow[0] = dbf_dt.Rows[j][0];
+                            newrow[3] = dbf_dt.Rows[j][1];
+                            newrow[5] = dbf_dt.Rows[j][2];
+                            newrow[11] = dbf_dt.Rows[j][3];
+
                             dt.Rows.Add(newrow);
                         }
                         else
@@ -570,9 +601,9 @@ namespace Import_DBF
                 start_daily_import2("T_TRAN", shop_map[key]);
                 start_daily_import2("T_LOG", shop_map[key]);
                 start_daily_import2("T_ATT", shop_map[key]);
-                start_daily_import2("T_ORDER", shop_map[key]);
+                start_daily_import2("T_ORDER", shop_map[key]);*/
                 start_daily_import("A_PAY", shop_map[key]);
-                start_daily_import("A_TRAN", shop_map[key]);*/
+                start_daily_import("A_TRAN", shop_map[key]);
             }
             import_daily_ribao();
             MessageBox.Show("所有门店导入完成");
@@ -1357,13 +1388,13 @@ namespace Import_DBF
         private void btnBaobiao_Click(object sender, EventArgs e)
         {
             int i = 0, j = 0;
-            Decimal d, zkou=new Decimal(0);
+            Decimal d = new Decimal(0), zkou=new Decimal(0);
 
             if (dateEnd.Text.Trim() == "")
                 dateEnd.Text = dateFrom.Text;
 
             logList.Items.Clear();
-            logList.Items.Add("门店" + departCode.Text + " (" +dateFrom.Text + "-" +dateEnd.Text+ ") 报表数据");
+            logList.Items.Add("门店" + departCombo.SelectedItem.ToString() + " (" + dateFrom.Text + "-" + dateEnd.Text + ") 报表数据");
             logList.Items.Add("---------------------------------------");
             logList.Items.Add("");
 
@@ -1372,33 +1403,37 @@ namespace Import_DBF
 
             Baobiaohelper bbh = new Baobiaohelper();
 
-            string sql_cmd = string.Format(bbh.get_sql_command("mfei"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            string sql_cmd = string.Format(bbh.get_sql_command("mfei"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCombo.SelectedItem.ToString(), depart_pp_map[departCombo.SelectedItem.ToString()]);
             DataTable dt = sh.sqlserver_execute_get_dt(sql_cmd);
-            d = Convert.ToDecimal(dt.Rows[0][1].ToString());
+            if (dt.Rows.Count != 0)
+                d = Convert.ToDecimal(dt.Rows[0][1].ToString());
 
-            sql_cmd = string.Format(bbh.get_sql_command("lrun"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            sql_cmd = string.Format(bbh.get_sql_command("lrun"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCombo.SelectedItem.ToString());
             dt = sh.sqlserver_execute_get_dt(sql_cmd);
             logList.Items.Add("食品原价：" + (Convert.ToDecimal(dt.Rows[0][3].ToString()) + d).ToString());
             logList.Items.Add("大单利润：" + dt.Rows[0][1].ToString());
             logList.Items.Add("销售总额：" + (Convert.ToDecimal(dt.Rows[0][2].ToString()) + d).ToString());
 
-            sql_cmd = string.Format(bbh.get_sql_command("jdui"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            sql_cmd = string.Format(bbh.get_sql_command("jdui"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCombo.SelectedItem.ToString(), depart_pp_map[departCombo.SelectedItem.ToString()]);
             dt = sh.sqlserver_execute_get_dt(sql_cmd);
-            logList.Items.Add("积兑礼额：" + dt.Rows[0][1].ToString());
+            if (dt.Rows.Count != 0)
+                logList.Items.Add("积兑礼额：" + dt.Rows[0][1].ToString());
+            else
+                logList.Items.Add("积兑礼额：0");
 
-            sql_cmd = string.Format(bbh.get_sql_command("zkou"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            sql_cmd = string.Format(bbh.get_sql_command("zkou"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCombo.SelectedItem.ToString(), depart_pp_map[departCombo.SelectedItem.ToString()]);
             dt = sh.sqlserver_execute_get_dt(sql_cmd);
             for (i = 0; i < dt.Rows.Count; i++)
                 zkou += Convert.ToDecimal(dt.Rows[i][2].ToString());
 
             logList.Items.Add("折扣总额：" + (zkou-d).ToString());
 
-                        logList.Items.Add("");
+            logList.Items.Add("");
             logList.Items.Add("================================");
 
             d = 0;
             logList.Items.Add("食品收款方式");
-            sql_cmd = string.Format(bbh.get_sql_command("food_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            sql_cmd = string.Format(bbh.get_sql_command("food_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCombo.SelectedItem.ToString(), depart_pp_map[departCombo.SelectedItem.ToString()]);
             dt = sh.sqlserver_execute_get_dt(sql_cmd);
             for (i = 0; i < dt.Rows.Count; i++)
             {
@@ -1410,7 +1445,7 @@ namespace Import_DBF
             logList.Items.Add("================================");
             d = 0;
             logList.Items.Add("充值及储值收款方式");
-            sql_cmd = string.Format(bbh.get_sql_command("czhi_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            sql_cmd = string.Format(bbh.get_sql_command("czhi_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCombo.SelectedItem.ToString(), depart_pp_map[departCombo.SelectedItem.ToString()]);
             dt = sh.sqlserver_execute_get_dt(sql_cmd);
             for (i = 0; i < dt.Rows.Count; i++)
             {
@@ -1422,7 +1457,7 @@ namespace Import_DBF
             logList.Items.Add("================================");
             d = 0;
             logList.Items.Add("挂账回收收款方式");
-            sql_cmd = string.Format(bbh.get_sql_command("gzhang_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            sql_cmd = string.Format(bbh.get_sql_command("gzhang_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCombo.SelectedItem.ToString(), depart_pp_map[departCombo.SelectedItem.ToString()]);
             dt = sh.sqlserver_execute_get_dt(sql_cmd);
             for (i = 0; i < dt.Rows.Count; i++)
             {
@@ -1434,7 +1469,7 @@ namespace Import_DBF
             logList.Items.Add("================================");
             d = 0;
             logList.Items.Add("签单预付收款方式");
-            sql_cmd = string.Format(bbh.get_sql_command("qdan_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            sql_cmd = string.Format(bbh.get_sql_command("qdan_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCombo.SelectedItem.ToString(), depart_pp_map[departCombo.SelectedItem.ToString()]);
             dt = sh.sqlserver_execute_get_dt(sql_cmd);
             for (i = 0; i < dt.Rows.Count; i++)
             {
@@ -1446,7 +1481,7 @@ namespace Import_DBF
             logList.Items.Add("================================");
             d = 0;
             logList.Items.Add("定金收取/取消收款方式");
-            sql_cmd = string.Format(bbh.get_sql_command("djin_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCode.Text.Trim());
+            sql_cmd = string.Format(bbh.get_sql_command("djin_income"), dateFrom.Text.Trim(), dateEnd.Text.Trim(), departCombo.SelectedItem.ToString(), depart_pp_map[departCombo.SelectedItem.ToString()]);
             dt = sh.sqlserver_execute_get_dt(sql_cmd);
             for (i = 0; i < dt.Rows.Count; i++)
             {
@@ -1454,6 +1489,15 @@ namespace Import_DBF
                 d += Convert.ToDecimal(dt.Rows[i][2].ToString());
             }
             logList.Items.Add("总额：\t" + d.ToString());
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            StreamWriter sw = new StreamWriter("D:\\baobiao.txt");
+            foreach (string line in logList.Items)
+                sw.WriteLine(line);
+            sw.Close();
+            MessageBox.Show("数据导入到: D:\\baobiao.txt");
         }
     }
 
@@ -1554,14 +1598,14 @@ namespace Import_DBF
 
         public Baobiaohelper()
         {
-            this.sqlcmd_map.Add("food_income", "SELECT b.OUTLET,C.DESC1 as 付款名称, SUM(B.AMOUNT) as 付款金额 FROM T_TRAN A INNER JOIN T_PAY B ON A.PP=B.PP AND A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE AND B.PP=C.PP WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\' AND B.DATEA BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.PP=\'101\' AND B.PP=\'101\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
-            this.sqlcmd_map.Add("gzhang_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\' 	AND B.DATE BETWEEN \'{0}' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.REF_NUM LIKE \'%H%\' 	AND B.REF_NUM LIKE \'%H%\' And c.PP=\'101\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
-            this.sqlcmd_map.Add("czhi_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\' AND B.DATE BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.REF_NUM LIKE \'%N%\' AND B.REF_NUM LIKE \'%N%\' and c.PP=\'101\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
-            this.sqlcmd_map.Add("djin_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\'	AND B.DATE BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.REF_NUM LIKE \'%D%\'	AND B.REF_NUM LIKE \'%D%\' and c.PP=\'101\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
-            this.sqlcmd_map.Add("qdan_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\'	AND B.DATE BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'S02\' AND A.REF_NUM LIKE \'%G%\' AND B.REF_NUM LIKE \'%G%\' and c.PP=\'101\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
-            this.sqlcmd_map.Add("jdui", "SELECT outlet,SUM(ITEM_DISC) FROM T_ORDER WHERE DATEA BETWEEN \'{0}\' AND \'{1}\' AND PP=\'101\' and OUTLET=\'{2}\' AND TYPEA=\'N\' group by outlet");
-            this.sqlcmd_map.Add("zkou", "SELECT OUTLET,b.DESC1,-SUM(AMT2) FROM T_LOG a inner join disc_hdHC b on a.pp=b.PP and a.REMARK3=b.CODE WHERE TYPEA=\'N\' and a.PP=\'101\' AND b.PP=\'101\' AND OUTLET=\'{2}\' AND DATE BETWEEN \'{0}\' AND \'{1}\' AND LOG_TYPE IN ('DORP','DORA','DCTP') GROUP BY b.DESC1,OUTLET");
-            this.sqlcmd_map.Add("mfei", "SELECT OUTLET,-SUM(AMT) FROM T_ORDER WHERE DATEA BETWEEN \'{0}\' AND \'{1}\' AND TYPEA=\'N\' and PP=\'101\'	and outlet=\'{2}\' AND REASON IN ('51','52') GROUP BY OUTLET");
+            this.sqlcmd_map.Add("food_income", "SELECT b.OUTLET,C.DESC1 as 付款名称, SUM(B.AMOUNT) as 付款金额 FROM T_TRAN A INNER JOIN T_PAY B ON A.PP=B.PP AND A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE AND B.PP=C.PP WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\' AND B.DATEA BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.PP=\'{3}\' AND B.PP=\'{3}\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
+            this.sqlcmd_map.Add("gzhang_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\' 	AND B.DATE BETWEEN \'{0}' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.REF_NUM LIKE \'%H%\' 	AND B.REF_NUM LIKE \'%H%\' And c.PP=\'{3}\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
+            this.sqlcmd_map.Add("czhi_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\' AND B.DATE BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.REF_NUM LIKE \'%N%\' AND B.REF_NUM LIKE \'%N%\' and c.PP=\'{3}\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
+            this.sqlcmd_map.Add("djin_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\'	AND B.DATE BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.REF_NUM LIKE \'%D%\'	AND B.REF_NUM LIKE \'%D%\' and c.PP=\'{3}\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
+            this.sqlcmd_map.Add("qdan_income", "SELECT b.OUTLET,C.DESC1 as 付款名称,SUM(B.AMOUNT) as 付款金额 FROM A_TRAN A INNER JOIN A_PAY B ON  A.OUTLET=B.OUTLET AND A.REF_NUM=B.REF_NUM INNER JOIN payment2 C on B.PAY_TYPE=C.CODE WHERE A.IN_DATE BETWEEN \'{0}\' AND \'{1}\'	AND B.DATE BETWEEN \'{0}\' AND \'{1}\' AND A.TRAN_TYPE=\'N\' AND B.TRAN_TYPE=\'N\' AND A.OUTLET=\'{2}\' AND B.OUTLET=\'{2}\' AND A.REF_NUM LIKE \'%G%\' AND B.REF_NUM LIKE \'%G%\' and c.PP=\'{3}\' GROUP BY C.DESC1,PAY_TYPE,b.OUTLET");
+            this.sqlcmd_map.Add("jdui", "SELECT outlet,SUM(ITEM_DISC) FROM T_ORDER WHERE DATEA BETWEEN \'{0}\' AND \'{1}\' AND PP=\'{3}\' and OUTLET=\'{2}\' AND TYPEA=\'N\' group by outlet");
+            this.sqlcmd_map.Add("zkou", "SELECT OUTLET,b.DESC1,-SUM(AMT2) FROM T_LOG a inner join disc_hdHC b on a.pp=b.PP and a.REMARK3=b.CODE WHERE TYPEA=\'N\' and a.PP=\'{3}\' AND b.PP=\'{3}\' AND OUTLET=\'{2}\' AND DATE BETWEEN \'{0}\' AND \'{1}\' AND LOG_TYPE IN (\'DORP\',\'DORA\',\'DCTP\') GROUP BY b.DESC1,OUTLET");
+            this.sqlcmd_map.Add("mfei", "SELECT OUTLET,-SUM(AMT) FROM T_ORDER WHERE DATEA BETWEEN \'{0}\' AND \'{1}\' AND TYPEA=\'N\' and PP=\'{3}\'	and outlet=\'{2}\' AND REASON IN (\'51\',\'52\') GROUP BY OUTLET");
             this.sqlcmd_map.Add("lrun", "SELECT OUTLET,SUM(AMT-QTY*COST) as 大单利润, SUM(AMT) as 销售总额, SUM(QTY*COST) as 食品原价 FROM T_ORDER WHERE SETMEAL<=\'0\' AND DATEA BETWEEN \'{0}\' AND \'{1}\'	AND OUTLET=\'{2}\' AND TYPEA=\'N\' GROUP BY OUTLET");
         }
         public String get_sql_command(string key) { return sqlcmd_map[key]; }
